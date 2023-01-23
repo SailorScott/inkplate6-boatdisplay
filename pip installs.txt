@@ -1,0 +1,4 @@
+pip install esptool
+
+Run: python -m esptool
+
