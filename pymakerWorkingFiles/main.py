@@ -1,61 +1,90 @@
-import random
+
 import time
+import uasyncio
+import network
+from machine import I2C
 
 import screen_display
 import screen_setup
 from inkplate import *
+from dgram import UDPServer
+import boatData 
+
+port = 2000
+
+Inkplate.init(I2C(0, scl=Pin(22), sda=Pin(21)))
+ipm = InkplateMono()
+ipp = InkplatePartial(ipm)
+
+screen = screen_setup.screen_setup(ipm)
+display = screen_display.screen_display(screen)
+displayData = boatData.DisplayData()
+
+# Connect to local Wi-Fi
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+if not wlan.isconnected():
+    print('connecting to network...')
+    wlan.connect('SVMorePractice', 'T0G0Faster!')
+    while not wlan.isconnected():
+        print('Trying to connect...')
+        pass
+print('network config:', wlan.ifconfig())
 
 
-
-if __name__ == "__main__":
-    from machine import I2C
-
-    Inkplate.init(I2C(0, scl=Pin(22), sda=Pin(21)))
-    ipm = InkplateMono()
-    ipp = InkplatePartial(ipm)
-
-    screen = screen_setup.screen_setup(ipm)
-    display = screen_display.screen_display(screen)
-
-    # TODO
-    # Screen Display for mode change between AWA vs Compass
-    # Setup the second procesor thread to monitor Wi-Fi
-    # Connect to local network
-    # NEMA Parsing
-    # State machine for checking for data, battery, mode change, refresh 
-    # Calculate TWA, TWS
-    # Control web page?? (LED On/off, brightness)
-
-
-
-    iter = 0
+async def DisplayUpdater():
+    """
+    Every second, reads the current data and sends to display elements.
+    """
+    lastDisplayMode = ""
 
     while True:
+        t0 = time.ticks_ms()
+        displayData.CalcCurrentValues()
 
-        ipm.clear()
-        ipm.display()
 
-        print(f"VBatt:", str(Inkplate.read_battery()))
+        displayMode = displayData.DisplayMode # "downwind"  or "upwind"
+        
+        if lastDisplayMode != displayMode:
+            ipm.clear()
+            ipm.display()
+            lastDisplayMode = displayMode
 
-        for i in range(1000):
-            print("number:", str(i))
-            displaySpeed = i  # random.randint(0, 12))
-            displayCompass = random.randint(0, 359)
-            displayTWA = Inkplate.read_battery() * 10.0 # random.randint(0, 359)
-            displayTWS = random.randint(8, 15)
-            displayMode = "upwind"  # upwind or offwind
+        displaySpeed = displayData.BoatSpeed
 
-            t0 = time.ticks_ms()
-            ipp.start()
+        ipp.start()
+        if displayMode == "downwind":
             ipm._framebuf[:] = screen.downWindBackground[:]
+            displayCompass = displayData.Heading
 
-            ipm = display.BoatSpeed(ipm, displaySpeed)
-            ipm = display.AngleLine(ipm, displayCompass, displayMode)
-            ipm = display.TrueWind(ipm, displayTWA, displayTWS)
+        else:
+            ipm._framebuf[:] = screen.upWindBackground[:]
+            displayCompass = displayData.ApparentWindAngleCloseHaul #Heading
 
-            ipp.display()
 
-            drawTime_ms = time.ticks_diff(time.ticks_ms(), t0)
-            print("Draw: in %dms" % drawTime_ms)
-            sleepTime = (1000 - drawTime_ms)/1000
-            time.sleep(sleepTime)
+
+        display.BoatSpeed(ipm, displaySpeed)
+        display.AngleLine(ipm, displayCompass, displayMode)
+        display.TrueWind(ipm, displayData.TrueWindDirection, displayData.TrueWindSpeed)
+        await uasyncio.sleep_ms(125)
+        ipp.display()
+
+        drawTime_ms = time.ticks_diff(time.ticks_ms(), t0)
+        print("Draw: in %dms" % drawTime_ms)
+        nextWake = 1000-drawTime_ms
+        if nextWake < 10:
+            nextWake = 10
+        await uasyncio.sleep_ms(nextWake)
+
+
+def main():
+    loop = uasyncio.get_event_loop()
+    udpReceiver = UDPServer()
+
+    loop.create_task(DisplayUpdater())
+    loop.run_until_complete(udpReceiver.serve('192.168.0.255', port)) # anything on the local network on port
+
+
+ 
+
+main()

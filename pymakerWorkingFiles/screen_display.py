@@ -24,9 +24,10 @@ class screen_display:
     def __init__(self, screen):
         self.screen = screen # screen has the framebuffers of the number shapes.
 
-    def BoatSpeed(self, ipm, boatSpeed):
+    def BoatSpeed(self, ipm, boatSpeed:float):
         # Boat speed (GPS Speed)
-        displaySpeed = "{:0>3}".format(boatSpeed) # random.randint(0, 12))
+        bsp = int(boatSpeed * 10.0) # have fixed descimal point
+        displaySpeed = "{:0>3}".format(bsp) 
 
         if displaySpeed[0] != "0":
             ipm.blit(
@@ -34,13 +35,16 @@ class screen_display:
             )  # Xxx
         ipm.blit(self.screen.NumLookupLarge(displaySpeed[1]), LINE1, LINE1NUM2)  # xXx
         ipm.blit(self.screen.NumLookupLarge(displaySpeed[2]), LINE1, LINE1NUM1)  # xxX
-        return ipm
+        # return ipm
 
-    def AngleLine(self, ipm, angle, displayMode):
+    def AngleLine(self, ipm, angle:float, displayMode):
         # Apparant Wind Angle OR GPS Heading
         # displayMode = upwind then show decimal point for AWA, offwind no decimal for heading
-        
-        displayAngle = "{:0>3}".format(angle)
+        print("AngleLine:", str(angle))
+        if displayMode == 'downwind':
+            displayAngle = "{:0>3}".format(int(angle*1.0))
+        else:
+            displayAngle = "{:0>3}".format(int(angle*10.0))
 
         ipm.blit(self.screen.NumLookupLarge(displayAngle[0]), LINE2, LINE2NUM3)
         ipm.blit(self.screen.NumLookupLarge(displayAngle[1]), LINE2, LINE2NUM2)

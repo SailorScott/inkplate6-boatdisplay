@@ -60,12 +60,6 @@ class screen_setup:
             }
 
 
-    # def upWindBackground(self):
-    #     return self.upWindBackground
-
-    # def DownWindBackgroun(self):
-    #     return self.downWindBackground
-
     def NumLookupLarge(self, num: str):
         return self.numLookupLarge[num]
         
