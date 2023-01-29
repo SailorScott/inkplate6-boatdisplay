@@ -40,7 +40,6 @@ class screen_display:
     def AngleLine(self, ipm, angle:float, displayMode):
         # Apparant Wind Angle OR GPS Heading
         # displayMode = upwind then show decimal point for AWA, offwind no decimal for heading
-        print("AngleLine:", str(angle))
         if displayMode == 'downwind':
             displayAngle = "{:0>3}".format(int(angle*1.0))
         else:

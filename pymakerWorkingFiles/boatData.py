@@ -52,6 +52,7 @@ class DisplayData:
     nmea_queue = RcvdMsgQueue()
     nmea = NMEA0183()
     trueWindAveraging = TrueWindAveraging()
+    utc = ""
 
      # run through the Received NMEA messages queue and parse out the data
     def CalcCurrentValues(self):
@@ -60,6 +61,7 @@ class DisplayData:
 
         self.BoatSpeed = self.nmea.data_gps['speed']
         self.Heading = self.nmea.data_gps['track']
+        self.utc = self.nmea.data_gps['utc']
         awa360 = self.nmea.data_weather['wind_angle'] #NEED TO MAKE +/- 0
 
         if awa360 > 180:
@@ -67,12 +69,12 @@ class DisplayData:
         else:
             self.ApparentWindAngleCloseHaul = awa360
 
-        print("self.ApparentWindAngleCloseHaul", self.ApparentWindAngleCloseHaul)
-
         if self.ApparentWindAngleCloseHaul < 60:
             self.DisplayMode = "upwind"
         else:
             self.DisplayMode = "downwind"
+
+        # print(f"awa360: {awa360}, awaCH: {self.ApparentWindAngleCloseHaul}, bh: {self.Heading}, displayMode: {self.DisplayMode}")
 
         aws = self.nmea.data_weather['wind_speed']
 

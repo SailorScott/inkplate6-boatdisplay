@@ -551,10 +551,10 @@ class InkplatePartial:
 
         t1 = time.ticks_ms()
         td = time.ticks_diff(t1, t0)
-        print(
-            "Partial: draw %dms (%dms/frame %dus/row) (y=%d..%d)"
-            % (td, td // n, td * 1000 // n // (D_ROWS - y), y, y + h + 1)
-        )
+        # print(
+        #     "Partial: draw %dms (%dms/frame %dus/row) (y=%d..%d)"
+        #     % (td, td // n, td * 1000 // n // (D_ROWS - y), y, y + h + 1)
+        # )
 
         ip.clean(2, 2)
         ip.clean(3, 1)

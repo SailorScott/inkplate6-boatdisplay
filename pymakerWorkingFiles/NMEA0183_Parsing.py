@@ -19,7 +19,7 @@ class NMEA0183():
 
 
 		#Ready the GPS variables
-		self.data_gps = {'lat': float(0.0), 'lon': float(0.0), 'speed': float(0.0), 'track': float(0.0), 'utc': '0.0', 'status': 'A'}
+		self.data_gps = {'lat': float(0.0), 'lon': float(0.0), 'speed': float(0.0), 'track': float(0.0), 'utc': '20230128T18:17:19Z', 'status': 'A'}
 		#Ready the depth variables
 		self.data_depth = {'feet': float(0.0), 'meters': float(0.0), 'fathoms': float(0.0), 'offset': float(0.0)}
 		#Ready the weather variables
@@ -39,6 +39,7 @@ class NMEA0183():
 			self.check_type()
 		except:
 			self.quit()
+
 
 	def make_checksum(self,data):
 		'''

@@ -9,12 +9,17 @@ import screen_setup
 from inkplate import *
 from dgram import UDPServer
 import boatData 
+from AW9523 import AW9523
 
 port = 2000
 
-Inkplate.init(I2C(0, scl=Pin(22), sda=Pin(21)))
+i2c = I2C(0, scl=Pin(22), sda=Pin(21))
+inkPlate = Inkplate.init(i2c)
 ipm = InkplateMono()
 ipp = InkplatePartial(ipm)
+
+# LED Driver
+aw = AW9523(i2c)
 
 screen = screen_setup.screen_setup(ipm)
 display = screen_display.screen_display(screen)
@@ -28,6 +33,7 @@ if not wlan.isconnected():
     wlan.connect('SVMorePractice', 'T0G0Faster!')
     while not wlan.isconnected():
         print('Trying to connect...')
+        time.sleep(1)
         pass
 print('network config:', wlan.ifconfig())
 
@@ -76,11 +82,35 @@ async def DisplayUpdater():
             nextWake = 10
         await uasyncio.sleep_ms(nextWake)
 
+        # battery = str(inkPlate.read_battery())
+        # print("battery2", battery)
+
+async def CheckSystem():
+    # every 10 seconds chcek battery level and if light needs to go on.
+    while True:
+
+    # check the time, and if between 00:00:00 and 10:30:00 GMT then turn on the LEDs
+        utc = displayData.utc
+        print('utc:', utc)
+        if len(utc) > 16:
+            hours = float(utc[11:13]) + float(utc[14:16])/60.0
+            if 0.0 <= hours <=10.5:
+                # lights on
+                aw[0] = 32
+                aw[7] = 32
+            else:
+                aw[0] = 0
+                aw[7] = 0            
+
+        await uasyncio.sleep(600)
 
 def main():
+
+
     loop = uasyncio.get_event_loop()
     udpReceiver = UDPServer()
 
+    loop.create_task(CheckSystem())
     loop.create_task(DisplayUpdater())
     loop.run_until_complete(udpReceiver.serve('192.168.0.255', port)) # anything on the local network on port
 
