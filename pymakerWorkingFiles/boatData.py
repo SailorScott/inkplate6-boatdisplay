@@ -5,14 +5,14 @@ from NMEA0183_Parsing import NMEA0183
 from TrueWind import calcTrueWind
 
 TWD_ARRAY_SIZE = const(30) # Rolling average base = 30 seconds.
-
+CH_ARRAY_SIZE = const(3) # Rolling average base = 3 seconds.
 
 calcTrueWind = calcTrueWind()
 
 _RawNMAAqueue = deque((),10)
 _TrueWindDirection = array.array('i', (0 for _ in range(TWD_ARRAY_SIZE)))
 _TrueWindSpeed = array.array('i', (0 for _ in range(TWD_ARRAY_SIZE)))
-
+_ApparentWindAngleCloseHaul = array.array('f', (0 for _ in range(CH_ARRAY_SIZE)))
 
 class RcvdMsgQueue:
     def add(self, nmsg:str):
@@ -48,7 +48,7 @@ class DisplayData:
     TrueWindSpeed = 4
     TrueWindDirection = 5
     DisplayMode = "upwind"
-    _TWDcounter = 0
+    _counter = 0
     nmea_queue = RcvdMsgQueue()
     nmea = NMEA0183()
     trueWindAveraging = TrueWindAveraging()
@@ -56,6 +56,9 @@ class DisplayData:
 
      # run through the Received NMEA messages queue and parse out the data
     def CalcCurrentValues(self):
+        
+        self._counter += 1
+        
         while self.nmea_queue.hasMsgs():
             self.nmea.processSentance(self.nmea_queue.pop())
 
@@ -65,11 +68,14 @@ class DisplayData:
         awa360 = self.nmea.data_weather['wind_angle'] #NEED TO MAKE +/- 0
 
         if awa360 > 180:
-            self.ApparentWindAngleCloseHaul = -(awa360-360)
+            _ApparentWindAngleCloseHaul[self._counter% CH_ARRAY_SIZE] = -(awa360-360)
         else:
-            self.ApparentWindAngleCloseHaul = awa360
+            _ApparentWindAngleCloseHaul[self._counter% CH_ARRAY_SIZE] = awa360
 
-        if self.ApparentWindAngleCloseHaul < 60:
+        # smooth out the last 3 readings
+        self.ApparentWindAngleCloseHaul = (sum(_ApparentWindAngleCloseHaul)/CH_ARRAY_SIZE) 
+
+        if self.ApparentWindAngleCloseHaul < 90:
             self.DisplayMode = "upwind"
         else:
             self.DisplayMode = "downwind"
@@ -80,8 +86,7 @@ class DisplayData:
 
         if aws > 0.0:
             tws, twd = calcTrueWind.calc(awa360, aws, self.Heading, self.BoatSpeed)
-            self._TWDcounter += 1
-            self.trueWindAveraging.add(self._TWDcounter, twd, tws)
+            self.trueWindAveraging.add(self._counter, twd, tws)
             self.TrueWindDirection = self.trueWindAveraging.avgTWD() 
             self.TrueWindSpeed = self.trueWindAveraging.avgTWS()
 

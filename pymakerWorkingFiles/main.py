@@ -76,7 +76,7 @@ async def DisplayUpdater():
         ipp.display()
 
         drawTime_ms = time.ticks_diff(time.ticks_ms(), t0)
-        print("Draw: in %dms" % drawTime_ms)
+        # print("Draw: in %dms" % drawTime_ms)
         nextWake = 1000-drawTime_ms
         if nextWake < 10:
             nextWake = 10
