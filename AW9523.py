@@ -10,7 +10,7 @@ __author__ = "Corentin J. Lapeyre"
 __email__ = "corentin.lapeyre@gmail.com"
 __version__ = "0.1.0"
 
-_AW9523_DEFAULT_ADDR   = const(0x5B) # A0 and A1 shorted so it starts high Z (LEDs off)
+_AW9523_DEFAULT_ADDR   = const(0x5B)
 _AW9523_REG_CHIPID     = const(0x10)  # Register for hardcode chip ID
 _AW9523_REG_SOFTRESET  = const(0x7F)  # Register for soft resetting
 _AW9523_REG_INTENABLE0 = const(0x06)  # Register for enabling interrupt
